@@ -26,13 +26,23 @@ app.options('*', cors());
 
 app.use(express.json());
 
-// Your routes
+// ✅ Debug middleware to log all incoming requests
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.path}`, {
+    body: req.body,
+    query: req.query,
+    headers: req.headers.origin
+  });
+  next();
+}); // ✅ ← this was missing!
+
+// ✅ Your routes
 app.use("/api/clip", clipRoutes);
 app.use("/api/ai", aiRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/audio', audioRoutes);
 
-// Your existing summarize endpoint
+// ✅ Your summarize endpoint
 app.post("/summarize", async (req, res) => {
   try {
     const { url, language } = req.body;
