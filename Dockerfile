@@ -1,12 +1,10 @@
 # Use Node.js 18 Alpine (lightweight)
 FROM node:18-alpine
 
-# Install system dependencies
+# Install system dependencies - use apk for yt-dlp instead of pip
 RUN apk add --no-cache \
     ffmpeg \
-    python3 \
-    py3-pip \
-    && pip3 install yt-dlp
+    yt-dlp
 
 # Create app directory
 WORKDIR /app
