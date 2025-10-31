@@ -3,10 +3,12 @@ import { promisify } from "util";
 import axios from "axios";
 import { YoutubeTranscript } from "youtube-transcript";
 import OpenAI from "openai";
+import dotenv from "dotenv";
+dotenv.config();
 
 const execAsync = promisify(exec);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const PORT = 5000;
+
 
 // ---------------- Supported languages ----------------
 const SUPPORTED_TRANSCRIPT_LANGS = ["en", "es", "fr", "ar"];

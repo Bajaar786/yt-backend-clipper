@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import OpenAI from "openai";
 import express from "express";
 import cors from "cors";
 import clipRoutes from "./routes/ClipRoutes.js";
@@ -9,13 +10,35 @@ import { getTranscriptText, summarizeTranscriptMultilingual } from './utils/summ
 
 
 const app = express();
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 // ✅ Allow requests from Chrome Extension and localhost
+
+const allowedOrigins = [
+  "chrome-extension://jgkndiajdibkeeimmmelkdfoaifhocnn",
+  "https://yt-backend-clipper.up.railway.app"
+];
+
 app.use(cors({
-  origin: ["chrome-extension://*", "http://localhost:5000"],
-  methods: ["GET", "POST"],
+  origin: function(origin, callback){
+    // allow requests with no origin (like mobile apps or curl)
+    if(!origin) return callback(null, true);
+    if(allowedOrigins.indexOf(origin) === -1){
+      const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
 }));
+
+// handle preflight requests (important for POST)
+app.options("*", cors());
+
+
 
 app.use(express.json());
 app.use("/api/clip", clipRoutes);
