@@ -8,63 +8,37 @@ import socialRoutes from './routes/socialRoutes.js';
 import audioRoutes from './routes/audioRoutes.js';
 import { getTranscriptText, summarizeTranscriptMultilingual } from './utils/summary.js';
 
-
 const app = express();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// ✅ Allow requests from Chrome Extension and localhost
+// ✅ CORS configuration that works with Chrome extensions
+app.use(cors({
+  origin: true, // Reflect the request origin
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 
-const allowedOrigins = [
-  "chrome-extension://jgkndiajdibkeeimmmelkdfoaifhocnn", // your extension ID
-  "https://yt-backend-clipper.up.railway.app", // your deployed backend
-  "http://localhost:5000" // for local testing
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
-
-
-// handle preflight requests (important for POST)
-app.options("*", cors());
-
-// Fallback headers for Railway
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,DELETE");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  next();
-});
-
+// Explicitly handle preflight requests
+app.options('*', cors());
 
 app.use(express.json());
+
+// Your routes
 app.use("/api/clip", clipRoutes);
 app.use("/api/ai", aiRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/audio', audioRoutes);
-// POST /summarize endpoint
+
+// Your existing summarize endpoint
 app.post("/summarize", async (req, res) => {
   try {
     const { url, language } = req.body;
     if (!url) return res.status(400).json({ error: "YouTube URL is required" });
     
-    // Step 1: Get transcript
     const transcript = await getTranscriptText(url, language || "en");
-
-    // Step 2: Summarize transcript
     const summary = await summarizeTranscriptMultilingual(transcript, language || "en", url);
 
     res.json({ success: true, summary });
@@ -72,35 +46,6 @@ app.post("/summarize", async (req, res) => {
     console.error("❌ /summarize error:", err.message);
     res.status(500).json({ error: "Failed to generate summary" });
   }
-});
-
-// Add this to your server.js for debugging
-app.get('/api/debug/routes', (req, res) => {
-  const routes = [];
-  
-  app._router.stack.forEach(middleware => {
-    if (middleware.route) {
-      routes.push({
-        path: middleware.route.path,
-        methods: Object.keys(middleware.route.methods)
-      });
-    } else if (middleware.name === 'router') {
-      middleware.handle.stack.forEach(handler => {
-        if (handler.route) {
-          routes.push({
-            path: handler.route.path,
-            methods: Object.keys(handler.route.methods)
-          });
-        }
-      });
-    }
-  });
-  
-  res.json({ routes });
-});
-// ✅ Auto-timestamp (if you made this route)
-app.post("/api/ai/auto-timestamp", (req, res) => {
-  res.json({ start: "00:00:10", end: "00:00:30" });
 });
 
 const PORT = process.env.PORT || 5000;
