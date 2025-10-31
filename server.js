@@ -17,26 +17,25 @@ const openai = new OpenAI({
 // ✅ Allow requests from Chrome Extension and localhost
 
 const allowedOrigins = [
-  "chrome-extension://jgkndiajdibkeeimmmelkdfoaifhocnn",
-  "https://yt-backend-clipper.up.railway.app"
+  "chrome-extension://jgkndiajdibkeeimmmelkdfoaifhocnn", // your extension ID
+  "https://yt-backend-clipper.up.railway.app", // your deployed backend
+  "http://localhost:5000" // for local testing
 ];
 
-app.use(cors({
-  origin: function(origin, callback){
-    // allow requests with no origin (like Chrome extension preflights)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
-      return callback(new Error(msg), false);
-    }
-  },
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 
 
 // handle preflight requests (important for POST)
